@@ -437,6 +437,4 @@ For issues and questions:
 - GitHub Issues: [Create an issue](https://github.com/your-repo/dns-snapshot-exporter/issues)
 - Documentation: See `/docs` directory
 
-## Authors
 
-Built with ❤️ using FastAPI and Vue.js
