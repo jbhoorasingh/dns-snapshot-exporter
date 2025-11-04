@@ -36,9 +36,20 @@ export const snapshotsAPI = {
 // Exports API
 export const exportsAPI = {
   getFormats: () => apiClient.get('/exports/formats'),
-  export: (snapshotId, format) => apiClient.post('/exports', { snapshot_id: snapshotId, format }),
-  download: (snapshotId, format) =>
-    apiClient.post('/exports/download', { snapshot_id: snapshotId, format }, { responseType: 'blob' }),
+  export: (snapshotId, format, soaConfig = null) => {
+    const payload = { snapshot_id: snapshotId, format };
+    if (soaConfig) {
+      payload.soa_config = soaConfig;
+    }
+    return apiClient.post('/exports', payload);
+  },
+  download: (snapshotId, format, soaConfig = null) => {
+    const payload = { snapshot_id: snapshotId, format };
+    if (soaConfig) {
+      payload.soa_config = soaConfig;
+    }
+    return apiClient.post('/exports/download', payload, { responseType: 'blob' });
+  },
 };
 
 // Comparisons API
