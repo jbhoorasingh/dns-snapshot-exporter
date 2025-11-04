@@ -72,10 +72,23 @@ class RecordResponse(BaseModel):
 
 
 # Export schemas
+class SOAConfig(BaseModel):
+    """Schema for SOA record configuration."""
+    mname: str = Field(..., description="Primary nameserver (e.g., ns1.example.com)")
+    rname: str = Field(..., description="Email address (e.g., admin.example.com)")
+    serial: Optional[int] = Field(None, description="Serial number (auto-generated if not provided)")
+    refresh: int = Field(10800, description="Refresh interval in seconds")
+    retry: int = Field(3600, description="Retry interval in seconds")
+    expire: int = Field(2419200, description="Expire time in seconds")
+    minimum: int = Field(900, description="Negative caching TTL in seconds")
+    ttl: int = Field(3600, description="Default TTL for the zone")
+
+
 class ExportRequest(BaseModel):
     """Schema for export request."""
     snapshot_id: int = Field(..., description="ID of the snapshot to export")
     format: str = Field(..., description="Export format (bind, terraform_aws, terraform_azure, csv)")
+    soa_config: Optional[SOAConfig] = Field(None, description="SOA configuration for BIND exports")
 
 
 class ExportResponse(BaseModel):

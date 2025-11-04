@@ -96,6 +96,8 @@ class InfobloxConnector(DNSConnector):
             "record:ptr": "PTR",
             "record:srv": "SRV",
             "record:ns": "NS",
+            # Note: SOA record is NOT fetched from Infoblox due to API limitations
+            # Users provide SOA details when exporting to BIND format
         }
 
         try:
@@ -103,26 +105,35 @@ class InfobloxConnector(DNSConnector):
                 for infoblox_type, record_type in record_types.items():
                     try:
                         # Build search parameters
-                        params = {
-                            "zone": zone_name,
-                            "_return_fields+": "name,ttl,comment,disable"
-                        }
+                        params = {}
 
-                        # Add type-specific fields
-                        if infoblox_type in ["record:a", "record:aaaa"]:
-                            params["_return_fields+"] += ",ipv4addr" if infoblox_type == "record:a" else ",ipv6addr"
-                        elif infoblox_type == "record:cname":
-                            params["_return_fields+"] += ",canonical"
-                        elif infoblox_type == "record:mx":
-                            params["_return_fields+"] += ",mail_exchanger,preference"
-                        elif infoblox_type == "record:txt":
-                            params["_return_fields+"] += ",text"
-                        elif infoblox_type == "record:ptr":
-                            params["_return_fields+"] += ",ptrdname"
-                        elif infoblox_type == "record:srv":
-                            params["_return_fields+"] += ",target,port,priority,weight"
-                        elif infoblox_type == "record:ns":
-                            params["_return_fields+"] += ",nameserver"
+                        # Handle SOA record (from zone_auth) differently
+                        if infoblox_type == "zone_auth":
+                            params = {
+                                "fqdn": zone_name,
+                                "_return_fields": "fqdn,soa_default_ttl,soa_expire,soa_mname,soa_negative_ttl,soa_refresh,soa_retry,soa_rname,soa_serial"
+                            }
+                        else:
+                            params = {
+                                "zone": zone_name,
+                                "_return_fields+": "name,ttl,comment,disable"
+                            }
+
+                            # Add type-specific fields for record types
+                            if infoblox_type in ["record:a", "record:aaaa"]:
+                                params["_return_fields+"] += ",ipv4addr" if infoblox_type == "record:a" else ",ipv6addr"
+                            elif infoblox_type == "record:cname":
+                                params["_return_fields+"] += ",canonical"
+                            elif infoblox_type == "record:mx":
+                                params["_return_fields+"] += ",mail_exchanger,preference"
+                            elif infoblox_type == "record:txt":
+                                params["_return_fields+"] += ",text"
+                            elif infoblox_type == "record:ptr":
+                                params["_return_fields+"] += ",ptrdname"
+                            elif infoblox_type == "record:srv":
+                                params["_return_fields+"] += ",target,port,priority,weight"
+                            elif infoblox_type == "record:ns":
+                                params["_return_fields+"] += ",nameserver"
 
                         response = await client.get(
                             f"{self.base_url}/{infoblox_type}",
@@ -131,6 +142,10 @@ class InfobloxConnector(DNSConnector):
                         response.raise_for_status()
                         records = response.json()
 
+                        # Ensure records is a list
+                        if not isinstance(records, list):
+                            records = [records] if records else []
+
                         raw_data["record_types"][record_type] = records
 
                         # Normalize records
@@ -138,6 +153,8 @@ class InfobloxConnector(DNSConnector):
                             normalized = self._normalize_record(record, record_type, infoblox_type)
                             if normalized:
                                 all_records.append(normalized)
+                            else:
+                                logger.warning(f"Failed to normalize {record_type} record: {record}")
 
                         logger.info(f"Retrieved {len(records)} {record_type} records for zone {zone_name}")
 
@@ -160,6 +177,7 @@ class InfobloxConnector(DNSConnector):
     def _normalize_record(self, record: Dict[str, Any], record_type: str, infoblox_type: str) -> DNSRecord | None:
         """Normalize an Infoblox record to DNSRecord format."""
         try:
+            # Handle regular DNS records
             name = record.get("name", "")
             ttl = record.get("ttl")
             comment = record.get("comment")

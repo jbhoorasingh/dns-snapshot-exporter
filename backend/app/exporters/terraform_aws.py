@@ -9,12 +9,13 @@ import json
 class TerraformAWSExporter(Exporter):
     """Export DNS records to Terraform AWS Route 53 format."""
 
-    def export(self, snapshot: Snapshot, records: List[Record]) -> str:
+    def export(self, snapshot: Snapshot, records: List[Record], **kwargs) -> str:
         """Export snapshot to Terraform AWS Route 53 format.
 
         Args:
             snapshot: Snapshot instance
             records: List of Record instances
+            **kwargs: Additional parameters (unused)
 
         Returns:
             Terraform HCL configuration

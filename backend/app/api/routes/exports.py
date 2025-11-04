@@ -26,9 +26,13 @@ def export_snapshot(export_req: ExportRequest, db: Session = Depends(get_db)):
     service = ExportService(db)
 
     try:
+        # Convert SOA config to dict if provided
+        soa_config = export_req.soa_config.model_dump() if export_req.soa_config else None
+
         content, file_path = service.export_snapshot(
             snapshot_id=export_req.snapshot_id,
-            format_key=export_req.format
+            format_key=export_req.format,
+            soa_config=soa_config
         )
 
         return ExportResponse(
@@ -50,9 +54,13 @@ def download_export(export_req: ExportRequest, db: Session = Depends(get_db)):
     service = ExportService(db)
 
     try:
+        # Convert SOA config to dict if provided
+        soa_config = export_req.soa_config.model_dump() if export_req.soa_config else None
+
         content, _ = service.export_snapshot(
             snapshot_id=export_req.snapshot_id,
-            format_key=export_req.format
+            format_key=export_req.format,
+            soa_config=soa_config
         )
 
         # Get file extension

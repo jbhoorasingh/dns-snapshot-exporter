@@ -54,7 +54,8 @@ class ExportService:
         self,
         snapshot_id: int,
         format_key: str,
-        output_path: str | None = None
+        output_path: str | None = None,
+        soa_config: dict | None = None
     ) -> tuple[str, str]:
         """Export a snapshot to the specified format.
 
@@ -62,6 +63,7 @@ class ExportService:
             snapshot_id: ID of the snapshot to export
             format_key: Export format key (bind, terraform_aws, terraform_azure, csv)
             output_path: Optional output file path. If not provided, returns content only.
+            soa_config: Optional SOA configuration for BIND exports
 
         Returns:
             Tuple of (content, file_path)
@@ -87,7 +89,12 @@ class ExportService:
 
         # Create exporter and export
         exporter = self.EXPORTERS[format_key]()
-        content = exporter.export(snapshot, records)
+
+        # Pass SOA config to BIND exporter if provided
+        if format_key == "bind" and soa_config:
+            content = exporter.export(snapshot, records, soa_config=soa_config)
+        else:
+            content = exporter.export(snapshot, records)
 
         # Save to file if output path provided
         saved_path = ""

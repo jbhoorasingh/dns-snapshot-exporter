@@ -9,12 +9,13 @@ class Exporter(ABC):
     """Abstract base class for exporters."""
 
     @abstractmethod
-    def export(self, snapshot: Snapshot, records: List[Record]) -> str:
+    def export(self, snapshot: Snapshot, records: List[Record], **kwargs) -> str:
         """Export snapshot records to the target format.
 
         Args:
             snapshot: Snapshot instance
             records: List of Record instances
+            **kwargs: Additional exporter-specific parameters
 
         Returns:
             Exported content as string

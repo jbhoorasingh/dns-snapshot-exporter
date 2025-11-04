@@ -10,12 +10,13 @@ from app.exporters.base import Exporter
 class CSVExporter(Exporter):
     """Export DNS records to CSV format."""
 
-    def export(self, snapshot: Snapshot, records: List[Record]) -> str:
+    def export(self, snapshot: Snapshot, records: List[Record], **kwargs) -> str:
         """Export snapshot to CSV format.
 
         Args:
             snapshot: Snapshot instance
             records: List of Record instances
+            **kwargs: Additional parameters (unused)
 
         Returns:
             CSV content
